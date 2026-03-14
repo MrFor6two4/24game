@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POPSKY01</title>
+    <title>MYGAMEFORU</title>
     <style>
         body{
-            background: rgb(0, 0, 0);
+            background: rgb(255, 255, 255);
             display: flex;
             justify-content: center;
             align-items: center;       
@@ -20,7 +20,7 @@
     <script>
         //code_game **all**
         const canvas = document.getElementById("game");
-        const ctx =canvas.getContext('2D');
+        const ctx =canvas.getContext('2d');
         let gameState ='start';
         let score=0;
         let lives=3;
@@ -34,10 +34,25 @@
         };
         const keys={};
         document.addEventListener('keydown',function(e) {
-            keys[e.keys]=true;
+            keys[e.key]=true;
+            if(e.key==='Enter'){
+                if(gameState==='start'){
+                    score=0;
+                    lives=3;
+                    frame=0;
+                    bullets=[];
+                    enemies=[];
+                    player.x=220;
+                    player.y=560;
+                    gameState='playing';
+                }
+                if(gameState==='gameover'){
+                    gameState='start';
+                }
+            }
         });
         document.addEventListener('keyup',function(e) {
-            keys[e.keys]=false;
+            keys[e.key]=false;
         });
         let bullets=[];
         let shootCooldown=0;
@@ -54,42 +69,100 @@
         }
         function update(){
             frame++;
-            if(gameState !=='player') return;
+            if(gameState !=='playing') return;
             if(keys['ArrowLeft']&&player.x>0) player.x-=player.speed;
             if(keys['ArrowRight']&&player.x+player.w<480) player.x+=player.speed;
-            if(keys['ArrowLeft']&&player.y>0) player.y-=player.speed;
-            if(keys['ArrowLeft']&&player.y+player.h<640) player.y+=player.speed;
+            if(keys['ArrowUp']&&player.y>0) player.y-=player.speed;
+            if(keys['ArrowDown']&&player.y+player.h<640) player.y+=player.speed;
             if(keys[' ']&& shootCooldown<=0){
                 shoot();
                 shootCooldown=12;
             }
             if (shootCooldown>0)shootCooldown--;
             bullets.forEach(function(b){b.y-=b.speed;});
-            bullets=bullets.filter(function(b){returnb.y>-20;});
+            bullets=bullets.filter(function(b){return b.y>-20;});
             spawnTimer++;
             if(spawnTimer>=80){
                 enemies.push({
                     x:Math.random()*440,
                     y:-40,
+                    w:38,
+                    h:38,
                     speed:2+Math.random()*2
                 });
                 spawnTimer=0;
             }
-            enemies.forEach(function(e){e.y+=e.sspeed;});
-            enemies=enemies.filter(function(e){returne.y<680;});
-            for(let bi=bullets.length=1; bi>=0; bi--){
-                for(let ei=enemies.length-1; ei>=0; ei--);{
+            enemies.forEach(function(e){e.y+=e.speed;});
+            enemies=enemies.filter(function(e){return e.y<680;});
+            for(let bi=bullets.length-1; bi>=0; bi--){
+                for(let ei=enemies.length-1; ei>=0; ei--){
                     let b =bullets[bi];
                     let e=enemies[ei];
                     if (b.x<e.x+e.w&&b.x+b.w>e.x&&b.y<e.y+e.h&&b.y+b.h>e.y){
-                        bullets.splice(bi<1);
+                        bullets.splice(bi,1);
                         enemies.splice(ei,1);
                         score+=10;
                     }
                 }
             }
-        
+            for(let ei=enemies.length-1; ei >=0;ei--){
+                let e=enemies[ei];
+                if(e.x<player.x+player.w&&e.x+e.w>player.x&&
+                   e.y<player.y+player.h&&e.y+e.h>player.y){
+                    enemies.splice(ei,1);
+                    lives--;
+                    if(lives<=0){
+                        gameState='gameover'
+                    }
+                }
+            }
         }
+        function draw(){
+                ctx.fillStyle='black';
+                ctx.fillRect(0,0,480,640);
+                if(gameState==='start'){
+                    ctx.fillStyle='white';
+                    ctx.font='bold 48px sans-serif';
+                    ctx.textAlign='center';
+                    ctx.fillText('POPSKY01',240,320);                   
+                    ctx.font='22px sans-serif';
+                    ctx.fillText('Press Enter to Start',240,390);
+                }else if(gameState==='playing'){
+                    ctx.fillStyle='white';
+                    ctx.fillRect(player.x,player.y,player.w,player.h);
+                    bullets.forEach(function(b){
+                        ctx.fillStyle='yellow';
+                        ctx.fillRect(b.x,b.y,b.w,b.h);
+                    });
+                    enemies.forEach(function(e){
+                        ctx.fillStyle='red';
+                        ctx.fillRect(e.x,e.y,e.w,e.h);
+                    });
+                    //hp//
+                    ctx.fillStyle='white';
+                    ctx.font='20px sans-serif';
+                    ctx.textAlign='left';
+                    ctx.fillText('score'+score,10,30);
+                    ctx.fillText('live'+lives,10,55);
+                }else if(gameState=='gameover'){
+                    ctx.fillStyle='red';
+                    ctx.font='bold 60px sans-serif';
+                    ctx.textAlign='center';
+                    ctx.fillText('GAME OVER',240,250);
+                    ctx.fillStyle='white';
+                    ctx.font='22px sans-serif';
+                    ctx.fillText('score:'+score,240,300);
+                    ctx.fillStyle='white';
+                    ctx.font='22px sans-serif';
+                    ctx.fillText('Press Enter to Restart',240,370);
+                }              
+            }      
+        function loop(){
+           update();
+           draw();
+           requestAnimationFrame(loop);
+        }
+        loop();
 
         
     </script>
