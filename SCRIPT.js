@@ -1,0 +1,246 @@
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+let gameState = "start";
+let score = 0;
+let lives = 3;
+let frame = 0;
+let lastTime = 0;
+const player = {
+  x: 220,
+  y: 560,
+  w: 60,
+  h: 60,
+  speed: 7,
+  frame: 0,
+  animatimer: 0,
+};
+const keys = {};
+document.addEventListener("keydown", function (e) {
+  keys[e.key] = true;
+  if (e.key === "Enter") {
+    if (gameState === "start") {
+      score = 0;
+      lives = 3;
+      frame = 0;
+      bullets = [];
+      enemies = [];
+      player.x = 220;
+      player.y = 560;
+      gameState = "playing";
+    }
+    if (gameState === "gameover") {
+      gameState = "start";
+    }
+  }
+});
+document.addEventListener("keyup", function (e) {
+  keys[e.key] = false;
+});
+let bullets = [];
+let shootCooldown = 0;
+let enemies = [];
+let spawnTimer = 0;
+let backgroundY = 0;
+const imgPlayer = new Image();
+imgPlayer.src = "images/player.png";
+const imgBullet = new Image();
+imgBullet.src = "images/bullet.png";
+const imgEnemies = new Image();
+imgEnemies.src = "images/enemies.png";
+const imgBackground = new Image();
+imgBackground.src = "images/background.png";
+const imgheart = new Image();
+imgheart.src = "images/heart.png";
+let heartFrame = 0;
+let heartTimer = 0;
+function shoot() {
+  let dw = 24;
+  bullets.push({
+    x: player.x + player.w / 2 - dw / 2,
+    y: player.y,
+    w: dw,
+    h: 48,
+    speed: 20,
+    frame: 0,
+    animatimer: 0,
+  });
+}
+function update(dt) {
+  frame++;
+  heartTimer += dt;
+  if (heartTimer >= 0.1) {
+    heartTimer = 0;
+    heartFrame++;
+    if (heartFrame >= 5) heartFrame = 0;
+  }
+  backgroundY += 120 * dt;
+  if (backgroundY >= 640) backgroundY = 0;
+  if (gameState !== "playing") return;
+  if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed * dt * 60;
+  if (keys["ArrowRight"] && player.x + player.w < 480)
+    player.x += player.speed * dt * 60;
+  if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed * dt * 60;
+  if (keys["ArrowDown"] && player.y + player.h < 640)
+    player.y += player.speed * dt * 60;
+  player.animatimer += dt;
+  if (player.animatimer >= 0.1) {
+    player.animatimer = 0;
+    player.frame++;
+    if (player.frame >= 4) player.frame = 0;
+  }
+  if (keys[" "] && shootCooldown <= 0) {
+    shoot();
+    shootCooldown = 0.4;
+  }
+  if (shootCooldown > 0) shootCooldown -= dt;
+  bullets.forEach(function (b) {
+    b.y -= b.speed * dt * 60;
+    b.animatimer += dt;
+    if (b.animatimer >= 0.08) {
+      b.animatimer = 0;
+      b.frame++;
+      if (b.frame >= 2) b.frame = 0;
+    }
+  });
+
+  bullets = bullets.filter(function (b) {
+    return b.y > -20;
+  });
+  spawnTimer += dt;
+  if (spawnTimer >= 0.7) {
+    enemies.push({
+      x: Math.random() * (480 - 64),
+      y: -40,
+      w: 64,
+      h: 64,
+      speed: 5 + Math.random() * 2,
+      frame: 0,
+      animatimer: 0,
+    });
+    spawnTimer = 0;
+  }
+  enemies.forEach(function (e) {
+    e.y += e.speed * dt * 60;
+    e.animatimer += dt;
+    if (e.animatimer >= 0.1) {
+      e.animatimer = 0;
+      e.frame++;
+      if (e.frame >= 4) e.frame = 0;
+    }
+  });
+  enemies = enemies.filter(function (e) {
+    return e.y < 680;
+  });
+  for (let bi = bullets.length - 1; bi >= 0; bi--) {
+    for (let ei = enemies.length - 1; ei >= 0; ei--) {
+      let b = bullets[bi];
+      let e = enemies[ei];
+      if (!b || !e) continue;
+      if (
+        b.x < e.x + e.w &&
+        b.x + b.w > e.x &&
+        b.y < e.y + e.h &&
+        b.y + b.h > e.y
+      ) {
+        bullets.splice(bi, 1);
+        enemies.splice(ei, 1);
+        score += 10;
+        break;
+      }
+    }
+  }
+  for (let ei = enemies.length - 1; ei >= 0; ei--) {
+    let e = enemies[ei];
+    if (
+      e.x < player.x + player.w &&
+      e.x + e.w > player.x &&
+      e.y < player.y + player.h &&
+      e.y + e.h > player.y
+    ) {
+      enemies.splice(ei, 1);
+      lives--;
+      if (lives <= 0) {
+        gameState = "gameover";
+      }
+    }
+  }
+}
+function draw() {
+  ctx.drawImage(imgBackground, 0, backgroundY, 480, 640);
+  ctx.drawImage(imgBackground, 0, backgroundY - 640, 480, 640);
+  if (gameState === "start") {
+    ctx.fillStyle = "white";
+    ctx.font = "bold 48px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("ARCADE GAME", 240, 320);
+    ctx.font = "22px sans-serif";
+    ctx.fillText("Press Enter to Start", 240, 390);
+  } else if (gameState === "playing") {
+    ctx.drawImage(
+      imgPlayer,
+      player.frame * 40,
+      0,
+      40,
+      40,
+      player.x,
+      player.y,
+      player.w,
+      player.h,
+    );
+    bullets.forEach(function (b) {
+      ctx.drawImage(imgBullet, b.frame * 32, 0, 32, 32, b.x, b.y, b.w, b.h);
+    });
+    enemies.forEach(function (e) {
+      ctx.drawImage(imgEnemies, e.frame * 48, 0, 48, 48, e.x, e.y, e.w, e.h);
+    });
+    //hp//
+    ctx.fillStyle = "white";
+    ctx.font = "20px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("score" + score, 10, 30);
+    for (let i = 0; i < lives; i++) {
+      ctx.drawImage(
+        imgheart,
+        heartFrame * 32,
+        0,
+        32,
+        32,
+        i * 34 + 10,
+        40,
+        32,
+        32,
+      );
+    }
+  } else if (gameState == "gameover") {
+    ctx.fillStyle = "red";
+    ctx.font = "bold 60px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("GAME OVER", 240, 250);
+    ctx.fillStyle = "white";
+    ctx.font = "22px sans-serif";
+    ctx.fillText("score:" + score, 240, 300);
+    ctx.fillStyle = "white";
+    ctx.font = "22px sans-serif";
+    ctx.fillText("Press Enter to Restart", 240, 370);
+  }
+}
+function scaleGame() {
+  let wrapper = document.getElementById("wrapper");
+  let w = window.innerWidth;
+  let h = window.innerHeight;
+  let scale = Math.min(w / 960, h / 1280);
+  wrapper.style.transform = "scale(" + scale + ")";
+  wrapper.style.transformOrigin = "center";
+}
+scaleGame();
+window.addEventListener("resize", scaleGame);
+function loop(timestamp) {
+  let dt = (timestamp - lastTime) / 1000;
+  if (dt > 0.1) dt = 0.1;
+  lastTime = timestamp;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);

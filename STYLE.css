@@ -1,0 +1,32 @@
+body {
+  background-image: url("images/bg2.jpg");
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+}
+#wrapper {
+  position: relative;
+  width: 960px;
+  height: 1280px;
+}
+.arcade {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 960px;
+  height: 1280px;
+}
+#game {
+  position: absolute;
+  left: 240px;
+  top: 352px;
+  background: transparent;
+}
+canvas{
+    image-rendering: pixelated;
+}
