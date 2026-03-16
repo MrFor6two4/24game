@@ -1,5 +1,8 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const sfxShoot = new Audio("sounds/shoot.wav");
+const sfxExplosion = new Audio("sounds/explosion.wav");
+const sfxHit = new Audio("sounds/hit.wav");
 ctx.imageSmoothingEnabled = false;
 let gameState = "start";
 let score = 0;
@@ -55,6 +58,8 @@ imgheart.src = "images/heart.png";
 let heartFrame = 0;
 let heartTimer = 0;
 function shoot() {
+  sfxShoot.currentTime = 0;
+  sfxShoot.play();
   let dw = 24;
   bullets.push({
     x: player.x + player.w / 2 - dw / 2,
@@ -65,6 +70,14 @@ function shoot() {
     frame: 0,
     animatimer: 0,
   });
+}
+function fillTextWithOutline(text, x, y, fillColor, outlineColor, outlineWidth) {
+  ctx.lineWidth = outlineWidth;
+  ctx.strokeStyle = outlineColor;
+  ctx.lineJoin = "round";
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = fillColor;
+  ctx.fillText(text, x, y);
 }
 function update(dt) {
   frame++;
@@ -78,11 +91,9 @@ function update(dt) {
   if (backgroundY >= 640) backgroundY = 0;
   if (gameState !== "playing") return;
   if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed * dt * 60;
-  if (keys["ArrowRight"] && player.x + player.w < 480)
-    player.x += player.speed * dt * 60;
+  if (keys["ArrowRight"] && player.x + player.w < 480) player.x += player.speed * dt * 60;
   if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed * dt * 60;
-  if (keys["ArrowDown"] && player.y + player.h < 640)
-    player.y += player.speed * dt * 60;
+  if (keys["ArrowDown"] && player.y + player.h < 640) player.y += player.speed * dt * 60;
   player.animatimer += dt;
   if (player.animatimer >= 0.1) {
     player.animatimer = 0;
@@ -137,29 +148,23 @@ function update(dt) {
       let b = bullets[bi];
       let e = enemies[ei];
       if (!b || !e) continue;
-      if (
-        b.x < e.x + e.w &&
-        b.x + b.w > e.x &&
-        b.y < e.y + e.h &&
-        b.y + b.h > e.y
-      ) {
+      if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
         bullets.splice(bi, 1);
         enemies.splice(ei, 1);
         score += 10;
+        sfxExplosion.currentTime = 0;
+        sfxExplosion.play();
         break;
       }
     }
   }
   for (let ei = enemies.length - 1; ei >= 0; ei--) {
     let e = enemies[ei];
-    if (
-      e.x < player.x + player.w &&
-      e.x + e.w > player.x &&
-      e.y < player.y + player.h &&
-      e.y + e.h > player.y
-    ) {
+    if (e.x < player.x + player.w && e.x + e.w > player.x && e.y < player.y + player.h && e.y + e.h > player.y) {
       enemies.splice(ei, 1);
       lives--;
+      sfxHit.currentTime = 0;
+      sfxHit.play();
       if (lives <= 0) {
         gameState = "gameover";
       }
@@ -170,24 +175,13 @@ function draw() {
   ctx.drawImage(imgBackground, 0, backgroundY, 480, 640);
   ctx.drawImage(imgBackground, 0, backgroundY - 640, 480, 640);
   if (gameState === "start") {
-    ctx.fillStyle = "white";
-    ctx.font = "bold 48px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("ARCADE GAME", 240, 320);
-    ctx.font = "22px sans-serif";
-    ctx.fillText("Press Enter to Start", 240, 390);
+    ctx.font = "48px 'Alfa Slab One'";
+    fillTextWithOutline("ARCADE GAME", 240, 310, "#0011ff", "#8bb3fd", 8);
+    ctx.font = "24px 'Alfa Slab One'";
+    fillTextWithOutline("Press Enter to Start", 240, 370, "#e5ff00", "#001aff", 4);
   } else if (gameState === "playing") {
-    ctx.drawImage(
-      imgPlayer,
-      player.frame * 40,
-      0,
-      40,
-      40,
-      player.x,
-      player.y,
-      player.w,
-      player.h,
-    );
+    ctx.drawImage(imgPlayer, player.frame * 40, 0, 40, 40, player.x, player.y, player.w, player.h);
     bullets.forEach(function (b) {
       ctx.drawImage(imgBullet, b.frame * 32, 0, 32, 32, b.x, b.y, b.w, b.h);
     });
@@ -195,34 +189,20 @@ function draw() {
       ctx.drawImage(imgEnemies, e.frame * 48, 0, 48, 48, e.x, e.y, e.w, e.h);
     });
     //hp//
-    ctx.fillStyle = "white";
-    ctx.font = "20px sans-serif";
+    ctx.font = "20px 'Alfa Slab One'";
     ctx.textAlign = "left";
-    ctx.fillText("score" + score, 10, 30);
+    fillTextWithOutline("score >" + score, 10, 30, "#fbff00", "#4400ff", 4);
     for (let i = 0; i < lives; i++) {
-      ctx.drawImage(
-        imgheart,
-        heartFrame * 32,
-        0,
-        32,
-        32,
-        i * 34 + 10,
-        40,
-        32,
-        32,
-      );
+      ctx.drawImage(imgheart, heartFrame * 32, 0, 32, 32, i * 34 + 10, 40, 32, 32);
     }
   } else if (gameState == "gameover") {
-    ctx.fillStyle = "red";
-    ctx.font = "bold 60px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("GAME OVER", 240, 250);
-    ctx.fillStyle = "white";
-    ctx.font = "22px sans-serif";
-    ctx.fillText("score:" + score, 240, 300);
-    ctx.fillStyle = "white";
-    ctx.font = "22px sans-serif";
-    ctx.fillText("Press Enter to Restart", 240, 370);
+    ctx.font = "60px 'Alfa Slab One'";
+    fillTextWithOutline("GAME OVER", 240, 280, "#ff0000", "#500b01", 4);
+    ctx.font = "22px 'Alfa Slab One'";
+    fillTextWithOutline("score > " + score, 240, 330, "#e5ff00", "#ffae00", 4);
+    ctx.font = "22px 'Alfa Slab One'";
+    fillTextWithOutline("Press Enter to Restart", 240, 370, "#001aff", "#0091bd", 4);
   }
 }
 function scaleGame() {
