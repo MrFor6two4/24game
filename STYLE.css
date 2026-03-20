@@ -1,5 +1,5 @@
 body {
-  background-image: url("images/bg2.jpg");
+  background-image: url("images/bg2.png");
   background-size: cover;
   background-position: center;
   display: flex;
@@ -9,12 +9,22 @@ body {
   margin: 0;
   overflow: hidden;
 }
+#instructions {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-family: "Arial", sans-serif;
+  font-size: 18px;
+  text-align: center;
+}
 #wrapper {
   position: relative;
   width: 960px;
   height: 1280px;
 }
-.arcade {
+#arcade {
   position: absolute;
   left: 0;
   top: 0;
@@ -27,6 +37,6 @@ body {
   top: 352px;
   background: transparent;
 }
-canvas{
-    image-rendering: pixelated;
+canvas {
+  image-rendering: pixelated;
 }

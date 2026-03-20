@@ -7,15 +7,17 @@
     <link rel="stylesheet" href="STYLE.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bitcount+Prop+Double:wght@100..900&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bitcount+Prop+Double:wght@100..900&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="wrapper">
-      <img src="images/box.png" class="arcade" />
+      <canvas id="arcade" width="960" height="1280"></canvas>
       <canvas id="game" width="480" height="640"></canvas>
+    </div>
+    <div id="instructions">
+      <p>instructions:</p>
+      <p>Press up, down, left, right to move</p>
+      <p>Press Enter to start&reset</p>
     </div>
     <script src="SCRIPT.js" defer></script>
   </body>

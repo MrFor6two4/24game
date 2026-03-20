@@ -1,14 +1,45 @@
+// canvas//
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+const arcadeCanvas = document.getElementById("arcade");
+const arcadeCtx = arcadeCanvas.getContext("2d");
+arcadeCtx.imageSmoothingEnabled = false;
+// audio//
 const sfxShoot = new Audio("sounds/shoot.wav");
 const sfxExplosion = new Audio("sounds/explosion.wav");
 const sfxHit = new Audio("sounds/hit.wav");
-ctx.imageSmoothingEnabled = false;
+sfxShoot.volume = 0.2;
+sfxExplosion.volume = 0.1;
+sfxHit.volume = 0.2;
+//imges//
+const imgbox = new Image();
+imgbox.src = "images/box.png";
+const imgPlayer = new Image();
+imgPlayer.src = "images/player.png";
+const imgBullet = new Image();
+imgBullet.src = "images/bullet.png";
+const imgEnemies = new Image();
+imgEnemies.src = "images/enemies.png";
+const imgBackground = new Image();
+imgBackground.src = "images/background.png";
+const imgheart = new Image();
+imgheart.src = "images/heart.png";
+//game start//
 let gameState = "start";
 let score = 0;
 let lives = 3;
 let frame = 0;
 let lastTime = 0;
+//arcade//
+const arcade = {
+  frame: 0,
+  animatimer: 0,
+  w: 960,
+  h: 1280,
+  totalFrames: 6,
+};
+//player//
 const player = {
   x: 220,
   y: 560,
@@ -18,6 +49,15 @@ const player = {
   frame: 0,
   animatimer: 0,
 };
+//bullets enemies something//
+let bullets = [];
+let shootCooldown = 0;
+let enemies = [];
+let spawnTimer = 0;
+let backgroundY = 0;
+let heartFrame = 0;
+let heartTimer = 0;
+//input//
 const keys = {};
 document.addEventListener("keydown", function (e) {
   keys[e.key] = true;
@@ -40,23 +80,7 @@ document.addEventListener("keydown", function (e) {
 document.addEventListener("keyup", function (e) {
   keys[e.key] = false;
 });
-let bullets = [];
-let shootCooldown = 0;
-let enemies = [];
-let spawnTimer = 0;
-let backgroundY = 0;
-const imgPlayer = new Image();
-imgPlayer.src = "images/player.png";
-const imgBullet = new Image();
-imgBullet.src = "images/bullet.png";
-const imgEnemies = new Image();
-imgEnemies.src = "images/enemies.png";
-const imgBackground = new Image();
-imgBackground.src = "images/background.png";
-const imgheart = new Image();
-imgheart.src = "images/heart.png";
-let heartFrame = 0;
-let heartTimer = 0;
+//functions//
 function shoot() {
   sfxShoot.currentTime = 0;
   sfxShoot.play();
@@ -81,25 +105,37 @@ function fillTextWithOutline(text, x, y, fillColor, outlineColor, outlineWidth) 
 }
 function update(dt) {
   frame++;
+  //arcade animation//
+  arcade.animatimer += dt;
+  if (arcade.animatimer >= 0.1) {
+    arcade.animatimer = 0;
+    arcade.frame++;
+    if (arcade.frame >= arcade.totalFrames) arcade.frame = 0;
+  }
+  //heart animation//
   heartTimer += dt;
   if (heartTimer >= 0.1) {
     heartTimer = 0;
     heartFrame++;
     if (heartFrame >= 5) heartFrame = 0;
   }
+  //background scroll//
   backgroundY += 120 * dt;
   if (backgroundY >= 640) backgroundY = 0;
   if (gameState !== "playing") return;
+  //player movement//
   if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed * dt * 60;
   if (keys["ArrowRight"] && player.x + player.w < 480) player.x += player.speed * dt * 60;
   if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed * dt * 60;
   if (keys["ArrowDown"] && player.y + player.h < 640) player.y += player.speed * dt * 60;
+  //player animation//
   player.animatimer += dt;
   if (player.animatimer >= 0.1) {
     player.animatimer = 0;
     player.frame++;
     if (player.frame >= 4) player.frame = 0;
   }
+  //shoot//
   if (keys[" "] && shootCooldown <= 0) {
     shoot();
     shootCooldown = 0.4;
@@ -114,10 +150,10 @@ function update(dt) {
       if (b.frame >= 2) b.frame = 0;
     }
   });
-
   bullets = bullets.filter(function (b) {
     return b.y > -20;
   });
+  //spawn enemies//
   spawnTimer += dt;
   if (spawnTimer >= 0.7) {
     enemies.push({
@@ -131,6 +167,7 @@ function update(dt) {
     });
     spawnTimer = 0;
   }
+  //enemies movement//
   enemies.forEach(function (e) {
     e.y += e.speed * dt * 60;
     e.animatimer += dt;
@@ -143,6 +180,7 @@ function update(dt) {
   enemies = enemies.filter(function (e) {
     return e.y < 680;
   });
+  //bullet hit//
   for (let bi = bullets.length - 1; bi >= 0; bi--) {
     for (let ei = enemies.length - 1; ei >= 0; ei--) {
       let b = bullets[bi];
@@ -158,6 +196,7 @@ function update(dt) {
       }
     }
   }
+  //player hit//
   for (let ei = enemies.length - 1; ei >= 0; ei--) {
     let e = enemies[ei];
     if (e.x < player.x + player.w && e.x + e.w > player.x && e.y < player.y + player.h && e.y + e.h > player.y) {
@@ -172,14 +211,23 @@ function update(dt) {
   }
 }
 function draw() {
+  //arcade box//
+  if (imgbox.complete && imgbox.width > 0) {
+    const frameW = imgbox.width / arcade.totalFrames;
+    arcadeCtx.clearRect(0, 0, arcade.w, arcade.h);
+    arcadeCtx.drawImage(imgbox, frameW * arcade.frame, 0, frameW, imgbox.height, 0, 0, arcade.w, arcade.h);
+  }
+  //background//
   ctx.drawImage(imgBackground, 0, backgroundY, 480, 640);
   ctx.drawImage(imgBackground, 0, backgroundY - 640, 480, 640);
+  //start screen//
   if (gameState === "start") {
     ctx.textAlign = "center";
     ctx.font = "48px 'Alfa Slab One'";
     fillTextWithOutline("ARCADE GAME", 240, 310, "#0011ff", "#8bb3fd", 8);
     ctx.font = "24px 'Alfa Slab One'";
     fillTextWithOutline("Press Enter to Start", 240, 370, "#e5ff00", "#001aff", 4);
+    //playing screen//
   } else if (gameState === "playing") {
     ctx.drawImage(imgPlayer, player.frame * 40, 0, 40, 40, player.x, player.y, player.w, player.h);
     bullets.forEach(function (b) {
@@ -188,14 +236,15 @@ function draw() {
     enemies.forEach(function (e) {
       ctx.drawImage(imgEnemies, e.frame * 48, 0, 48, 48, e.x, e.y, e.w, e.h);
     });
-    //hp//
+    //score and lives//
     ctx.font = "20px 'Alfa Slab One'";
     ctx.textAlign = "left";
     fillTextWithOutline("score >" + score, 10, 30, "#fbff00", "#4400ff", 4);
     for (let i = 0; i < lives; i++) {
       ctx.drawImage(imgheart, heartFrame * 32, 0, 32, 32, i * 34 + 10, 40, 32, 32);
     }
-  } else if (gameState == "gameover") {
+    //game over screen//
+  } else if (gameState === "gameover") {
     ctx.textAlign = "center";
     ctx.font = "60px 'Alfa Slab One'";
     fillTextWithOutline("GAME OVER", 240, 280, "#ff0000", "#500b01", 4);
