@@ -31,6 +31,14 @@ let score = 0;
 let lives = 3;
 let frame = 0;
 let lastTime = 0;
+//bullets enemies something//
+let bullets = [];
+let shootCooldown = 0;
+let enemies = [];
+let spawnTimer = 0;
+let backgroundY = 0;
+let heartFrame = 0;
+let heartTimer = 0;
 //arcade//
 const arcade = {
   frame: 0,
@@ -49,14 +57,6 @@ const player = {
   frame: 0,
   animatimer: 0,
 };
-//bullets enemies something//
-let bullets = [];
-let shootCooldown = 0;
-let enemies = [];
-let spawnTimer = 0;
-let backgroundY = 0;
-let heartFrame = 0;
-let heartTimer = 0;
 //input//
 const keys = {};
 document.addEventListener("keydown", function (e) {
