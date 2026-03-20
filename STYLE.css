@@ -16,9 +16,10 @@ body {
   transform: translateX(-50%);
   color: white;
   font-family: "Arial", sans-serif;
-  font-size: 18px;
+  font-size: 16px;
   text-align: center;
   white-space: nowrap;
+  pointer-events: none;
 }
 #wrapper {
   position: relative;
@@ -31,6 +32,7 @@ body {
   top: 0;
   width: 960px;
   height: 1280px;
+  pointer-events: none;
 }
 #game {
   position: absolute;
